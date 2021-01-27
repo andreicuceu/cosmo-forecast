@@ -111,7 +111,7 @@ class Sampler:
             the chain is running. For now it's empty
         """
         def log_lik(theta):
-            """ Wrapper for likelihood. No derived for now """
+            """ Wrapper for likelihood """
             params = {}
             for i, name in enumerate(self.names):
                 params[name] = theta[i]

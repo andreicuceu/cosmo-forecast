@@ -34,7 +34,7 @@ class baoLikelihood:
     # @jit
     def log_lik(self, theta):
         '''
-        Compute log Likelihood from BAO data 
+        Compute log Likelihood from BAO data
         '''
         model_pars, derived = self.compute_model(theta)
 
@@ -50,7 +50,7 @@ class baoLikelihood:
 
         return log_lik, derived
 
-    @jit
+    # @jit
     def compute_model(self, theta):
         '''
         Computes the model parameters for everything using the zeff_dict member
@@ -69,32 +69,29 @@ class baoLikelihood:
         # Check for Omega_b and H_0
         if self.compute_rd:
             raise ValueError('compute_rd not implemented properly yet')
-            H0 = theta[1]
-            Omb = theta[2]
-            Omm = theta[0] + Omb
+            H0 = theta['H0']
+            Omb = theta['Omega_b']
+            Omm = theta['Omega_cdm'] + Omb
         else:
-            Omm = theta[0]
-            H0_rd = theta[1]
+            Omm = theta['Omega_m']
+            if 'H0_rd' in theta.keys():
+                H0_rd = theta['H0_rd']
             H0 = None
             Omb = None
 
         # Get the remaining model parameters
         if self.model == 'flcdm':
-            assert(len(theta) == 2 + int(self.compute_rd))
             Ode = None
             w0 = -1
         elif self.model == 'lcdm':
-            assert(len(theta) == 3 + int(self.compute_rd))
-            Ode = theta[-1]
+            Ode = theta['Omega_lambda']
             w0 = -1
         elif self.model == 'fwcdm':
-            assert(len(theta) == 3 + int(self.compute_rd))
             Ode = None
-            w0 = theta[-1]
+            w0 = theta['w0']
         elif self.model == 'wcdm':
-            assert(len(theta) == 4 + int(self.compute_rd))
-            Ode = theta[-2]
-            w0 = theta[-1]
+            Ode = theta['Omega_lambda']
+            w0 = theta['w0']
         else:
             print('Model.model must be one of: ["flcdm","lcdm","fwcdm","wcdm"].'  
                 'The ini file value was: %s. Please change and rerun' % self.model)
