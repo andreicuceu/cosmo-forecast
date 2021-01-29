@@ -93,7 +93,7 @@ class baoModel:
         dh_rd = c / hrd
         dmdh_rdsq = dm_rd * dh_rd
 
-        return dmdh_rdsq
+        return np.sqrt(dmdh_rdsq)
 
     def compute_ap(self, z_eff):
         '''

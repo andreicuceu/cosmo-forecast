@@ -22,7 +22,7 @@ class Sampler:
         self.limits = limits
         self.names = limits.keys()
         self.num_params = len(limits)
-        self.num_derived = 1
+        self.num_derived = 0
         self.log_lik = log_lik_func
 
         # Initialize the Polychord settings
