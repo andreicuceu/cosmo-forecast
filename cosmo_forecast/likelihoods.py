@@ -167,5 +167,5 @@ class baoLikelihood:
     def lik_bao(self, bao_model, name):
         diff_vec = bao_model - self.bao_data[name]
         chisq = self.bao_cov_inv[name].dot(diff_vec)
-        chisq = float(diff_vec * chisq.T)
+        chisq = float(diff_vec.T.dot(chisq))
         return -chisq / 2
