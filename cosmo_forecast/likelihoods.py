@@ -129,23 +129,23 @@ class baoLikelihood:
         return pars, derived
 
     def setup_ap(self, config, name):
-        self.F_ap[name] = config.getboolean('F_ap')
-        self.sig_F_ap[name] = config.getboolean('sig_F_ap')
+        self.F_ap[name] = config.getfloat('F_ap')
+        self.sig_F_ap[name] = config.getfloat('sig_F_ap')
 
     def setup_alpha(self, config, name):
-        self.alpha[name] = config.getboolean('alpha')
-        self.sig_alpha[name] = config.getboolean('sig_alpha')
+        self.alpha[name] = config.getfloat('alpha')
+        self.sig_alpha[name] = config.getfloat('sig_alpha')
 
     def setup_gamma(self, config, name):
-        self.gamma[name] = config.getboolean('gamma')
-        self.sig_gamma[name] = config.getboolean('sig_gamma')
+        self.gamma[name] = config.getfloat('gamma')
+        self.sig_gamma[name] = config.getfloat('sig_gamma')
 
     def setup_bao(self, config, name):
-        ap = config.getboolean('F_ap')
-        alpha = config.getboolean('alpha')
-        sig_ap = config.getboolean('sig_F_ap')
-        sig_alpha = config.getboolean('sig_alpha')
-        rho = config.getboolean('rho_bao')
+        ap = config.getfloat('F_ap')
+        alpha = config.getfloat('alpha')
+        sig_ap = config.getfloat('sig_F_ap')
+        sig_alpha = config.getfloat('sig_alpha')
+        rho = config.getfloat('rho_bao')
         corr = rho * sig_alpha * sig_ap
         cov = np.array([[sig_alpha**2, corr], [corr, sig_ap**2]])
 
