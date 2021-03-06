@@ -261,7 +261,7 @@ class baoLikelihood:
         # Gaussian Likelihood
         diff_vec = th_vec - data_vec
         chisq = inv_cov.dot(diff_vec)
-        chisq = float(diff_vec * chisq.T)
+        chisq = float(diff_vec.T.dot(chisq))
 
         # log_lik = -0.5 * num_dim * np.log(2 * np.pi) - 0.5 * np.log(cov_det)
         # log_lik -= 0.5 * chisq
