@@ -31,10 +31,15 @@ class baoLikelihood:
                 self.setup_gamma(config[dataname], dataname)
             elif 'BAO' in dataname:
                 self.setup_bao(config[dataname], dataname)
+            elif 'DESI' in dataname:
+                self.setup_desi(config[dataname], dataname)
             else:
                 raise ValueError('Wrong dataset name')
 
-            self.zeff_dict[dataname] = config[dataname].getfloat('redshift')
+            if 'DESI' in dataname:
+                self.zeff_dict[dataname] = self.desi_zeff_list
+            else:
+                self.zeff_dict[dataname] = config[dataname].getfloat('redshift')
 
         self.datasets = datasets
         self.compute_rd = config['Model'].getboolean('compute_rd', False)
@@ -58,6 +63,8 @@ class baoLikelihood:
                 log_lik += self.lik_gamma(model_pars[name], name)
             if 'BAO' in name:
                 log_lik += self.lik_bao(model_pars[name], name)
+            if 'DESI' in name:
+                log_lik += self.lik_desi(model_pars[name])
 
         return log_lik, derived
 
@@ -122,6 +129,8 @@ class baoLikelihood:
                 ap = bao_model.compute_ap(zeff)
                 alpha = bao_model.compute_alpha(zeff, H0_rd)
                 pars[name] = np.array([alpha, ap])
+            if 'DESI' in name:
+                pars[name] = bao_model.compute_anchored(np.array(zeff)).T
 
         derived = bao_model.derived
         if derived is None:
@@ -152,6 +161,57 @@ class baoLikelihood:
         self.bao_data[name] = np.array([alpha, ap])
         self.bao_cov_inv[name] = np.linalg.inv(cov)
 
+    def setup_desi(self, config, name):
+        self.desi_num_files = config['DESI'].getint('num_files')
+
+        # First get Fiducial cosmology
+        fid_H0 = config['Model'].getfloat('fid_H0', 67.37)
+        fid_Omm = config['Model'].getfloat('fid_Omega_m', 0.3147)
+        fid_Omb = config['Model'].getfloat('fid_Omega_b', 0.049199)
+        corr_par = config['Model'].getfloat('corr_par', 0.4)
+
+        self.desi_zeff_list = []  # coords: num_files, bin - each contains one zeff
+        self.desi_data = []  # coords: num_files, bin - each contains one dict with data
+
+        for i in range(self.desi_num_files):
+            path = config['DESI'].get('data_' + str(i))
+            data = np.loadtxt(path)
+            if len(np.shape(data)) == 1:
+                data = np.array([data])
+
+            # Get zeff
+            zeff = list(data[:, 0])
+            self.zeff_list += zeff
+
+            data_list = []
+            # Compute the fiducial models
+            for row in data:
+                # Compute fiducial data
+
+                model = baoModel(fid_Omm, fid_H0, fid_Omb)
+                pars = model.compute_anchored(row[0])
+                pars[0] = pars[0] / (1 + row[0])  # convert D_M -> D_A
+
+                # Compute errors and the covariance matrix
+                sig_1 = pars[0] * row[1] / 100.0
+                sig_2 = pars[1] * row[2] / 100.0
+                cov = corr_par * sig_1 * sig_2
+                cov_mat = np.matrix([[sig_1**2, cov], [cov, sig_2**2]])
+                inv_cov = np.linalg.inv(cov_mat)
+                cov_det = np.linalg.det(cov_mat)
+
+                # Save everything we need in a dict
+                data_dict = {}
+                data_dict['zeff'] = row[0]
+                data_dict['data_vec'] = pars
+                data_dict['cov_mat'] = cov_mat
+                data_dict['inv_cov'] = inv_cov
+                data_dict['cov_det'] = cov_det
+
+                data_list.append(data_dict)
+
+            self.desi_data.append(data_list)
+
     def lik_ap(self, dm_dh, name):
         chi2 = (dm_dh - self.F_ap[name])**2 / self.sig_F_ap[name]**2
         return -chi2 / 2
@@ -168,4 +228,41 @@ class baoLikelihood:
         diff_vec = bao_model - self.bao_data[name]
         chisq = self.bao_cov_inv[name].dot(diff_vec)
         chisq = float(diff_vec.T.dot(chisq))
+        return -chisq / 2
+
+    def lik_desi(self, theta):
+        '''
+        theta must contain a table of BAO peak position parameters
+        [(D_M(z) / r_d), (H(z) * r_d)]
+        Matching the zeff_list member variable length
+        '''
+        log_lik = 0
+        assert len(self.desi_zeff_list) == len(theta)
+
+        ind = 0  # index for theta vec
+        for i, probe in enumerate(self.desi_data):
+            for j, data_dict in enumerate(probe):
+                th_vec = theta[ind]
+                assert len(th_vec) == 2
+                th_vec[0] = th_vec[0] / (1 + data_dict['zeff'])
+
+                log_lik += self.comp_lik(th_vec, data_dict['data_vec'], data_dict['inv_cov'], data_dict['cov_det'])
+                ind += 1
+
+        return log_lik
+
+    @staticmethod
+    def comp_lik(th_vec, data_vec, inv_cov, cov_det):
+        '''
+        Compute N-D gaussian likelihood
+        '''
+        # num_dim = len(th_vec)
+
+        # Gaussian Likelihood
+        diff_vec = th_vec - data_vec
+        chisq = inv_cov.dot(diff_vec)
+        chisq = float(diff_vec * chisq.T)
+
+        # log_lik = -0.5 * num_dim * np.log(2 * np.pi) - 0.5 * np.log(cov_det)
+        # log_lik -= 0.5 * chisq
         return -chisq / 2
