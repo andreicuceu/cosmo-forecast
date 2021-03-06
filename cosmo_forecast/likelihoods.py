@@ -181,7 +181,7 @@ class baoLikelihood:
 
             # Get zeff
             zeff = list(data[:, 0])
-            self.zeff_list += zeff
+            self.desi_zeff_list += zeff
 
             data_list = []
             # Compute the fiducial models
