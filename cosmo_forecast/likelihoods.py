@@ -130,7 +130,7 @@ class baoLikelihood:
                 alpha = bao_model.compute_alpha(zeff, H0_rd)
                 pars[name] = np.array([alpha, ap])
             if 'DESI' in name:
-                pars[name] = bao_model.compute_anchored(np.array(zeff)).T
+                pars[name] = bao_model.compute(np.array(zeff), H0_rd).T
 
         derived = bao_model.derived
         if derived is None:

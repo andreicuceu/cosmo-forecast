@@ -145,6 +145,30 @@ class baoModel:
 
         return dmdh
 
+    def compute(self, z_eff, H0_rd):
+        '''
+        Function for computing the BAO peak coordinates using H0*rd and Omega_m as parameters
+        z_eff can be float or 1D array
+        '''
+        # We need to be careful to take out the H0 dependency in D_m 
+        # This section of the code is based on astropy
+        Ok0 = self._cosmo.Ok0
+        cd = self._cosmo.comoving_distance(z=z_eff).value
+        c = const.c.to(units.kilometer/units.second).value
+
+        if Ok0 == 0:
+            dm_rd = cd * self._H0 / H0_rd
+        else:
+            sqrtOk0 = np.sqrt(np.abs(Ok0))
+            x = cd * self._H0 / c
+            if Ok0 < 0:
+                dm_rd = np.sin(sqrtOk0 * x) * c / (sqrtOk0 * H0_rd)
+            else:
+                dm_rd = np.sinh(sqrtOk0 * x) * c / (sqrtOk0 * H0_rd)
+
+        hrd = H0_rd * self._cosmo.efunc(z=z_eff)
+        return np.array([dm_rd, hrd])
+
     # @jit
     def compute_anchored(self, z_eff):
         '''
