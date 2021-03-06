@@ -32,7 +32,7 @@ class baoLikelihood:
             elif 'BAO' in dataname:
                 self.setup_bao(config[dataname], dataname)
             elif 'DESI' in dataname:
-                self.setup_desi(config[dataname], dataname)
+                self.setup_desi(config, dataname)
             else:
                 raise ValueError('Wrong dataset name')
 
